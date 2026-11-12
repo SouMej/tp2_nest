@@ -1,4 +1,3 @@
-
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -8,15 +7,14 @@ import { AppService } from './app.service';
 import { UsersModule } from './users/users.module';
 import { CvsModule } from './cvs/cvs.module';
 import { SkillsModule } from './skills/skills.module';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
-    // Charger les variables du fichier .env
     ConfigModule.forRoot({
       isGlobal: true,
     }),
 
-    // Configurer la connexion à MySQL
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
@@ -38,6 +36,8 @@ import { SkillsModule } from './skills/skills.module';
     CvsModule,
 
     SkillsModule,
+
+    AuthModule,
   ],
   controllers: [AppController],
   providers: [AppService],
