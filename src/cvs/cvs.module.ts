@@ -14,5 +14,6 @@ import { Skill } from '../skills/entities/skill.entity';
   ],
   controllers: [CvsController],
   providers: [CvsService],
+  exports: [CvsService],
 })
 export class CvsModule {}
