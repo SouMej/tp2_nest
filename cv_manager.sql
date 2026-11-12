@@ -1,0 +1,5 @@
+DB_HOST=localhost
+DB_PORT=3306
+DB_USERNAME=root
+DB_PASSWORD=ton_mot_de_passe_mysql
+DB_DATABASE=cv_manager
