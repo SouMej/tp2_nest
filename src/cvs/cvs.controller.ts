@@ -1,13 +1,15 @@
 
 import {
   Controller, Get, Post, Body,
-  Patch, Param, Delete, ParseIntPipe
+  Patch, Param, Delete, ParseIntPipe, UseGuards
 } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
 
 import { CvsService } from './cvs.service';
 import { CreateCvDto } from './dto/create-cv.dto';
 import { UpdateCvDto } from './dto/update-cv.dto';
 
+@UseGuards(AuthGuard('jwt'))
 @Controller('cvs')
 export class CvsController {
 
