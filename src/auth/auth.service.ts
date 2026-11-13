@@ -1,9 +1,11 @@
+
 import {
   ConflictException,
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { JwtService } from '@nestjs/jwt';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 
@@ -16,8 +18,11 @@ export class AuthService {
   constructor(
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+
+    private readonly jwtService: JwtService,
   ) {}
 
+  // SLIDE 10 - REGISTER (Your friend's implementation)
   async register(registerDto: RegisterDto) {
     const { username, email, password } = registerDto;
 
@@ -46,9 +51,8 @@ export class AuthService {
     return result;
   }
 
-  async login(loginDto: LoginDto) {
-    const { username, password } = loginDto;
-
+  // SLIDE 11 - VALIDATE USER (Passport LocalStrategy)
+  async validateUser(username: string, password: string) {
     const user = await this.userRepository.findOne({
       where: [{ username }, { email: username }],
     });
@@ -57,16 +61,52 @@ export class AuthService {
       throw new UnauthorizedException('Identifiants invalides');
     }
 
-    const isPasswordValid = await bcrypt.compare(password, user.password);
+    const isPasswordValid = await bcrypt.compare(
+      password,
+      user.password,
+    );
 
     if (!isPasswordValid) {
       throw new UnauthorizedException('Identifiants invalides');
     }
 
-    const { password: _, ...userWithoutPassword } = user;
+    // Remove password before returning the user
+    const { password: _, ...safeUser } = user;
+
+    return safeUser;
+  }
+
+  // SLIDE 10 - ORIGINAL LOGIN METHOD (Preserved)
+  async login(loginDto: LoginDto) {
+    const user = await this.validateUser(
+      loginDto.username,
+      loginDto.password,
+    );
+
+    // Reuse the JWT generation method
+    return this.loginForUser(user);
+  }
+
+  // SLIDE 11 - GENERATE JWT AFTER AUTHENTICATION
+  async loginForUser(user: {
+    id: number;
+    username: string;
+    email: string;
+    role: string;
+  }) {
+    const payload = {
+      sub: user.id,
+      username: user.username,
+      role: user.role,
+    };
+
+    const accessToken = await this.jwtService.signAsync(payload);
+
     return {
       message: 'Connexion réussie',
-      user: userWithoutPassword,
+      access_token: accessToken,
+      token_type: 'Bearer',
+      user,
     };
   }
 }
