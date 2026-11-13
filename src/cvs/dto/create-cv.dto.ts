@@ -29,9 +29,6 @@ export class CreateCvDto {
   @IsString()
   path: string;
 
-  @IsInt()
-  userId: number;
-
   @IsOptional()
   @IsArray()
   @IsInt({ each: true })

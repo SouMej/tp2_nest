@@ -10,14 +10,15 @@ import { Repository, In } from 'typeorm';
 import { Cv } from './entities/cv.entity';
 import { User } from '../users/entities/user.entity';
 import { Skill } from '../skills/entities/skill.entity';
+import { UserRoleEnum } from '../users/enums/user-role.enum';
 
 import { CreateCvDto } from './dto/create-cv.dto';
 import { UpdateCvDto } from './dto/update-cv.dto';
 
-import { BaseService } from '../common/services/base.service';
-
+// Does not extend BaseService: every CV operation is scoped to its owner,
+// so the generic (unscoped) base methods must not be exposed here.
 @Injectable()
-export class CvsService extends BaseService<Cv> {
+export class CvsService {
 
   constructor(
     @InjectRepository(Cv)
@@ -28,14 +29,13 @@ export class CvsService extends BaseService<Cv> {
 
     @InjectRepository(Skill)
     private skillsRepository: Repository<Skill>,
-  ) {
-    super(cvsRepository);
-  }
+  ) {}
 
   // CREATE : spécifique à CV
-  async create(createCvDto: CreateCvDto) {
+  // The owner always comes from the authenticated user, never from the DTO
+  async create(createCvDto: CreateCvDto, userId: number) {
 
-    const { userId, skillIds, ...cvData } = createCvDto;
+    const { skillIds, ...cvData } = createCvDto;
 
     const user = await this.usersRepository.findOneBy({
       id: userId,
@@ -64,9 +64,12 @@ export class CvsService extends BaseService<Cv> {
     return this.cvsRepository.save(cv);
   }
 
-  // READ ALL : spécifique à CV (avec relations)
-  async findAll() {
+  // READ ALL : the user's own CVs; every CV only if `all` is requested by an admin
+  async findAll(user: { userId: number; role: string }, all = false) {
+    const canSeeAll = all && user.role === UserRoleEnum.ADMIN;
+
     return this.cvsRepository.find({
+      where: canSeeAll ? {} : { user: { id: user.userId } },
       relations: {
         user: true,
         skills: true,
@@ -74,10 +77,10 @@ export class CvsService extends BaseService<Cv> {
     });
   }
 
-  // READ ONE : spécifique à CV (avec relations)
-  async findOne(id: number) {
+  // READ ONE : a CV owned by another user is treated as not found
+  async findOne(id: number, userId: number) {
     const cv = await this.cvsRepository.findOne({
-      where: { id },
+      where: { id, user: { id: userId } },
       relations: {
         user: true,
         skills: true,
@@ -91,26 +94,14 @@ export class CvsService extends BaseService<Cv> {
     return cv;
   }
 
-  // UPDATE : spécifique à CV
-  async update(id: number, updateCvDto: UpdateCvDto) {
+  // UPDATE : only the owner can update, and the owner cannot be changed
+  async update(id: number, updateCvDto: UpdateCvDto, userId: number) {
 
-    const cv = await this.findOne(id);
+    const cv = await this.findOne(id, userId);
 
-    const { userId, skillIds, ...cvData } = updateCvDto;
+    const { skillIds, ...cvData } = updateCvDto;
 
     Object.assign(cv, cvData);
-
-    if (userId !== undefined) {
-      const user = await this.usersRepository.findOneBy({
-        id: userId,
-      });
-
-      if (!user) {
-        throw new NotFoundException('User not found');
-      }
-
-      cv.user = user;
-    }
 
     if (skillIds !== undefined) {
       const skills = skillIds.length
@@ -127,6 +118,13 @@ export class CvsService extends BaseService<Cv> {
     }
 
     return this.cvsRepository.save(cv);
+  }
+
+  // DELETE : only the owner can delete
+  async remove(id: number, userId: number) {
+    const cv = await this.findOne(id, userId);
+
+    await this.cvsRepository.remove(cv);
   }
 
 }
