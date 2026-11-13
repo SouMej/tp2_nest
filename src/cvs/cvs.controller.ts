@@ -9,6 +9,9 @@ import type { Request } from 'express';
 import { CvsService } from './cvs.service';
 import { CreateCvDto } from './dto/create-cv.dto';
 import { UpdateCvDto } from './dto/update-cv.dto';
+import { AdminGuard } from '../auth/guards/admin.guard';
+import { Roles } from '../auth/decorators/roles.decorator';
+import { UserRoleEnum } from '../users/enums/user-role.enum';
 
 // Shape of req.user as returned by JwtStrategy.validate()
 interface AuthenticatedRequest extends Request {
@@ -32,7 +35,15 @@ export class CvsController {
 
   @Get()
   findAll(@Req() req: AuthenticatedRequest) {
-    return this.cvsService.findAll(req.user.userId);
+    return this.cvsService.findAll(req.user);
+  }
+
+  // Admin only: every CV. Declared before ':id' so 'all' is not parsed as an id.
+  @Get('all')
+  @Roles(UserRoleEnum.ADMIN)
+  @UseGuards(AdminGuard)
+  findAllForAdmin(@Req() req: AuthenticatedRequest) {
+    return this.cvsService.findAll(req.user, true);
   }
 
   @Get(':id')

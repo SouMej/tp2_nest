@@ -10,6 +10,7 @@ import { Repository, In } from 'typeorm';
 import { Cv } from './entities/cv.entity';
 import { User } from '../users/entities/user.entity';
 import { Skill } from '../skills/entities/skill.entity';
+import { UserRoleEnum } from '../users/enums/user-role.enum';
 
 import { CreateCvDto } from './dto/create-cv.dto';
 import { UpdateCvDto } from './dto/update-cv.dto';
@@ -63,10 +64,12 @@ export class CvsService {
     return this.cvsRepository.save(cv);
   }
 
-  // READ ALL : only the CVs owned by the user
-  async findAll(userId: number) {
+  // READ ALL : the user's own CVs; every CV only if `all` is requested by an admin
+  async findAll(user: { userId: number; role: string }, all = false) {
+    const canSeeAll = all && user.role === UserRoleEnum.ADMIN;
+
     return this.cvsRepository.find({
-      where: { user: { id: userId } },
+      where: canSeeAll ? {} : { user: { id: user.userId } },
       relations: {
         user: true,
         skills: true,
