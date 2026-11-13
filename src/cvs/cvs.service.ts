@@ -64,16 +64,17 @@ export class CvsService {
     return this.cvsRepository.save(cv);
   }
 
-  // READ ALL : the user's own CVs; every CV only if `all` is requested by an admin
-  async findAll(user: { userId: number; role: string }, all = false) {
-    const canSeeAll = all && user.role === UserRoleEnum.ADMIN;
+  // READ ALL : un admin récupère tous les CVs, un user seulement les siens
+  async findAll(user: { userId: number; role: string }) {
+    const relations = { user: true, skills: true };
+
+    if (user.role === UserRoleEnum.ADMIN) {
+      return this.cvsRepository.find({ relations });
+    }
 
     return this.cvsRepository.find({
-      where: canSeeAll ? {} : { user: { id: user.userId } },
-      relations: {
-        user: true,
-        skills: true,
-      },
+      where: { user: { id: user.userId } },
+      relations,
     });
   }
 

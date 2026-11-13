@@ -93,28 +93,10 @@ describe('CvsService (ownership + admin access)', () => {
       });
     });
 
-    it('a normal user asking for all CVs still gets only their own', async () => {
-      await service.findAll(ownerUser, true);
-
-      expect(cvsRepository.find).toHaveBeenCalledWith({
-        where: { user: { id: 1 } },
-        relations,
-      });
-    });
-
-    it('an admin gets only their own CVs by default', async () => {
+    it('returns every CV for an admin', async () => {
       await service.findAll(adminUser);
 
-      expect(cvsRepository.find).toHaveBeenCalledWith({
-        where: { user: { id: 99 } },
-        relations,
-      });
-    });
-
-    it('an admin asking for all CVs gets every CV', async () => {
-      await service.findAll(adminUser, true);
-
-      expect(cvsRepository.find).toHaveBeenCalledWith({ where: {}, relations });
+      expect(cvsRepository.find).toHaveBeenCalledWith({ relations });
     });
   });
 

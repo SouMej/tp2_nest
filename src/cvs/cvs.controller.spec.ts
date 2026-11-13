@@ -130,6 +130,12 @@ describe('CvsController (route protection + admin access)', () => {
       expect(cvsService.findAll).toHaveBeenCalledWith(normalUser);
     });
 
+    it('GET /cvs passes the admin to the service (which returns all CVs)', async () => {
+      await server().get('/cvs').set(bearer(adminToken)).expect(200);
+
+      expect(cvsService.findAll).toHaveBeenCalledWith(adminUser);
+    });
+
     it('GET /cvs/:id is scoped to the user', async () => {
       await server().get('/cvs/7').set(bearer(userToken)).expect(200);
 
@@ -168,7 +174,7 @@ describe('CvsController (route protection + admin access)', () => {
     it('allows an admin and asks the service for all CVs', async () => {
       await server().get('/cvs/all').set(bearer(adminToken)).expect(200);
 
-      expect(cvsService.findAll).toHaveBeenCalledWith(adminUser, true);
+      expect(cvsService.findAll).toHaveBeenCalledWith(adminUser);
     });
 
     it('denies a normal user (403) without calling the service', async () => {

@@ -43,7 +43,7 @@ export class CvsController {
   @Roles(UserRoleEnum.ADMIN)
   @UseGuards(AdminGuard)
   findAllForAdmin(@Req() req: AuthenticatedRequest) {
-    return this.cvsService.findAll(req.user, true);
+    return this.cvsService.findAll(req.user);
   }
 
   @Get(':id')
