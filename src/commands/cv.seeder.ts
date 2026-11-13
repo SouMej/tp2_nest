@@ -60,16 +60,18 @@ async function bootstrap() {
 
     // 3. Les cvs, reliés à un user et à plusieurs skills
     for (let i = 0; i < NB_CVS; i++) {
-      await cvsService.create({
-        name: randLastName(),
-        firstname: randFirstName(),
-        age: randNumber({ min: 18, max: 65 }),
-        Cin: randNumber({ min: 10000000, max: 99999999 }),
-        Job: randJobTitle(),
-        path: randFilePath(),
-        userId: rand(users).id,
-        skillIds: pickRandom(skills, NB_SKILLS_PAR_CV).map((skill) => skill.id),
-      });
+      await cvsService.create(
+        {
+          name: randLastName(),
+          firstname: randFirstName(),
+          age: randNumber({ min: 18, max: 65 }),
+          Cin: randNumber({ min: 10000000, max: 99999999 }),
+          Job: randJobTitle(),
+          path: randFilePath(),
+          skillIds: pickRandom(skills, NB_SKILLS_PAR_CV).map((skill) => skill.id),
+        },
+        rand(users).id,
+      );
     }
 
     console.log(
