@@ -1,0 +1,269 @@
+{
+  "info": {
+    "name": "CV Manager - TP2",
+    "description": "Ordre conseillé : 1. Auth, 2. Skills, 3. CVs (user), 4. Admin. Les logins enregistrent le token automatiquement.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:3000" },
+    { "key": "userToken", "value": "" },
+    { "key": "adminToken", "value": "" },
+    { "key": "skillId", "value": "1" },
+    { "key": "cvId", "value": "1" }
+  ],
+  "item": [
+    {
+      "name": "1. Auth",
+      "item": [
+        {
+          "name": "Register user",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/auth/register",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"user1\",\n  \"email\": \"user1@test.com\",\n  \"password\": \"password123\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Register admin (puis changer le role en base)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/auth/register",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"admin1\",\n  \"email\": \"admin1@test.com\",\n  \"password\": \"password123\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Login user",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set('userToken', pm.response.json().access_token);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"user1\",\n  \"password\": \"password123\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Login admin",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set('adminToken', pm.response.json().access_token);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"admin1\",\n  \"password\": \"password123\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Login mauvais mot de passe (401)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"user1\",\n  \"password\": \"mauvais\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Skills",
+      "item": [
+        {
+          "name": "Create skill",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set('skillId', pm.response.json().id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/skills",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"Designation\": \"NestJS\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Get skills",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/skills"
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. CVs (user)",
+      "auth": {
+        "type": "bearer",
+        "bearer": [{ "key": "token", "value": "{{userToken}}", "type": "string" }]
+      },
+      "item": [
+        {
+          "name": "Get CVs sans token (401)",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "url": "{{baseUrl}}/cvs"
+          }
+        },
+        {
+          "name": "Create CV",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set('cvId', pm.response.json().id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/cvs",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Daoud\",\n  \"firstname\": \"Mariem\",\n  \"age\": 22,\n  \"Cin\": 12345678,\n  \"Job\": \"Developer\",\n  \"path\": \"cv.pdf\",\n  \"skillIds\": [{{skillId}}]\n}"
+            }
+          }
+        },
+        {
+          "name": "Get mes CVs",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/cvs"
+          }
+        },
+        {
+          "name": "Get un CV",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/cvs/{{cvId}}"
+          }
+        },
+        {
+          "name": "Update CV",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/cvs/{{cvId}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"Job\": \"Backend Developer\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Get tous les CVs en tant que user (403)",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/cvs/all"
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Admin",
+      "auth": {
+        "type": "bearer",
+        "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }]
+      },
+      "item": [
+        {
+          "name": "Slide 14 - Get CVs (admin voit tout)",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/cvs"
+          }
+        },
+        {
+          "name": "Slide 13 - Get /cvs/all (AdminGuard)",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/cvs/all"
+          }
+        },
+        {
+          "name": "Update le CV d'un autre (404)",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/cvs/{{cvId}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"Job\": \"Hack\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Delete le CV d'un autre (404)",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/cvs/{{cvId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. Nettoyage",
+      "auth": {
+        "type": "bearer",
+        "bearer": [{ "key": "token", "value": "{{userToken}}", "type": "string" }]
+      },
+      "item": [
+        {
+          "name": "Delete mon CV",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/cvs/{{cvId}}"
+          }
+        }
+      ]
+    }
+  ]
+}
